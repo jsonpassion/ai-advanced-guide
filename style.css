@@ -552,3 +552,39 @@ figure.diagram.scroll svg { min-width: 760px; }
 /* 트리, 코드 강조 */
 .snippet pre .c-md { color: var(--accent-deep); font-weight: 500; }
 .snippet pre .c-dim { color: var(--gray); }
+
+/* ── 목차 접기 ─────────────────────────────────────────── */
+.toc-title { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.toc-toggle {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-3);
+  background: transparent;
+  border: 1px solid var(--hairline-hover);
+  border-radius: var(--radius);
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.toc-toggle:hover { color: var(--text); border-color: var(--gray); }
+
+.layout.toc-collapsed { grid-template-columns: 4.25rem minmax(0, 1fr); }
+.layout.toc-collapsed .toc-title { justify-content: center; }
+.layout.toc-collapsed .toc-title-text { display: none; }
+.layout.toc-collapsed .toc-label { display: none; }
+.layout.toc-collapsed .toc a {
+  margin-left: 0;
+  padding: 0.34rem 0.25rem;
+  text-align: center;
+}
+.layout.toc-collapsed .toc-num { margin-right: 0; }
+
+@media (max-width: 900px) {
+  .toc-toggle { display: none; }
+  .layout.toc-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .layout.toc-collapsed .toc-label { display: inline; }
+  .layout.toc-collapsed .toc a { margin: 0 0.5rem 0 0; padding: 0.35rem 0.15rem; text-align: left; }
+}

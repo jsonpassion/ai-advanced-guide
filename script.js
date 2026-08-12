@@ -52,3 +52,24 @@ if (targets.length) {
   );
   targets.forEach((t) => io.observe(t));
 }
+
+/* ── 목차 접기 ──────────────────────────────────────── */
+const layoutEl = document.querySelector(".layout");
+const tocToggle = document.getElementById("tocToggle");
+if (layoutEl && tocToggle) {
+  document.querySelectorAll(".toc a").forEach((a) => {
+    const label = a.querySelector(".toc-label");
+    if (label) a.title = label.textContent;
+  });
+  const apply = (collapsed) => {
+    layoutEl.classList.toggle("toc-collapsed", collapsed);
+    tocToggle.textContent = collapsed ? "펼치기" : "접기";
+    tocToggle.setAttribute("aria-expanded", String(!collapsed));
+    tocToggle.setAttribute("aria-label", collapsed ? "목차 펼치기" : "목차 접기");
+    try { localStorage.setItem("toc-collapsed", collapsed ? "1" : "0"); } catch {}
+  };
+  let initialCollapsed = false;
+  try { initialCollapsed = localStorage.getItem("toc-collapsed") === "1"; } catch {}
+  if (initialCollapsed) apply(true);
+  tocToggle.addEventListener("click", () => apply(!layoutEl.classList.contains("toc-collapsed")));
+}

@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Serif+KR:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -25,16 +25,16 @@
 <div class="layout">
 
   <nav class="toc" aria-label="목차">
-    <p class="toc-title">목차</p>
+    <p class="toc-title"><span class="toc-title-text">목차</span><button type="button" class="toc-toggle" id="tocToggle" aria-expanded="true" aria-label="목차 접기">접기</button></p>
     <ol>
-      <li><a href="#intro"><span class="toc-num">00</span>시작하기 전에</a></li>
-      <li><a href="#anatomy"><span class="toc-num">01</span>한 턴의 해부</a></li>
-      <li><a href="#files"><span class="toc-num">02</span>파일 규약</a></li>
-      <li><a href="#desktop"><span class="toc-num">03</span>데스크톱 앱</a></li>
-      <li><a href="#slash"><span class="toc-num">04</span>슬래시 커맨드</a></li>
-      <li><a href="#harness"><span class="toc-num">05</span>하니스</a></li>
-      <li><a href="#setup"><span class="toc-num">06</span>정석 셋팅</a></li>
-      <li><a href="#refs"><span class="toc-num">07</span>참고 자료</a></li>
+      <li><a href="#intro"><span class="toc-num">00</span><span class="toc-label">시작하기 전에</span></a></li>
+      <li><a href="#anatomy"><span class="toc-num">01</span><span class="toc-label">한 턴의 해부</span></a></li>
+      <li><a href="#files"><span class="toc-num">02</span><span class="toc-label">파일 규약</span></a></li>
+      <li><a href="#desktop"><span class="toc-num">03</span><span class="toc-label">데스크톱 앱</span></a></li>
+      <li><a href="#slash"><span class="toc-num">04</span><span class="toc-label">슬래시 커맨드</span></a></li>
+      <li><a href="#harness"><span class="toc-num">05</span><span class="toc-label">하니스</span></a></li>
+      <li><a href="#setup"><span class="toc-num">06</span><span class="toc-label">정석 셋팅</span></a></li>
+      <li><a href="#refs"><span class="toc-num">07</span><span class="toc-label">참고 자료</span></a></li>
     </ol>
   </nav>
 
@@ -788,6 +788,6 @@ GitHub 이슈 $ARGUMENTS 를 우리 코딩 규칙에 맞게 수정하라.
 </div>
 </div>
 
-<script src="script.js?v=1"></script>
+<script src="script.js?v=2"></script>
 </body>
 </html>
