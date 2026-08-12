@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생성형 AI를 다루는 네 가지 요소, 심화편</title>
+<meta name="description" content="네 가지 요소가 한 턴 안에서 어떻게 맞물리는지 해부합니다. .claude 디렉터리 규약, 데스크톱 앱 GUI, 슬래시 커맨드의 메커니즘, 하니스 엔지니어링이 코드단에서 잡는 것, 정석 셋팅 순서를 예시 코드와 함께 다룹니다. 각 절 하단에 Anthropic, OpenAI, Google 공식 문서 출처를 실었습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%230eb4fc%22/><circle cx=%2216%22 cy=%2216%22 r=%227%22 fill=%22%23ffffff%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Serif+KR:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#top" class="brand"><em>네 가지 요소</em> 심화편</a>
+    <a class="topbar-meta" href="https://jsonpassion.github.io/ai-literacy-guide/" style="text-decoration:none;">기본편 보기 ↗</a>
+  </div>
+</header>
+
+<div class="shell">
+<div class="layout">
+
+  <nav class="toc" aria-label="목차">
+    <p class="toc-title">목차</p>
+    <ol>
+      <li><a href="#intro"><span class="toc-num">00</span>시작하기 전에</a></li>
+      <li><a href="#anatomy"><span class="toc-num">01</span>한 턴의 해부</a></li>
+      <li><a href="#files"><span class="toc-num">02</span>파일 규약</a></li>
+      <li><a href="#desktop"><span class="toc-num">03</span>데스크톱 앱</a></li>
+      <li><a href="#slash"><span class="toc-num">04</span>슬래시 커맨드</a></li>
+      <li><a href="#harness"><span class="toc-num">05</span>하니스</a></li>
+      <li><a href="#setup"><span class="toc-num">06</span>정석 셋팅</a></li>
+      <li><a href="#refs"><span class="toc-num">07</span>참고 자료</a></li>
+    </ol>
+  </nav>
+
+  <main id="top">
+
+    <section class="hero">
+      <h1>네 가지 요소, 심화편</h1>
+      <p class="hero-sub">
+        슬래시 커맨드 하나를 실행했는데 스킬이 로드되고, 도구 호출이 일어나고, MCP 서버가 응답합니다.
+        이 문서는 그 한 턴을 해부합니다. 파일을 어디에 어떤 형태로 두는지, GUI 어디에서 관리하는지,
+        슬래시 커맨드가 무엇인지, 그리고 이 전부를 코드로 묶는 하니스가 무엇을 조절하는지를
+        예시와 함께 다룹니다.
+      </p>
+      <dl class="hero-facts">
+        <div class="hero-fact"><dt>전제</dt><dd><a href="https://jsonpassion.github.io/ai-literacy-guide/" style="color:inherit;">기본편</a>의 네 가지 개념을 읽었다고 가정합니다</dd></div>
+        <div class="hero-fact"><dt>분량</dt><dd>통독 25분, 필요한 절만 골라 읽는 구성입니다</dd></div>
+        <div class="hero-fact"><dt>기준</dt><dd>Anthropic, OpenAI, Google 공식 문서 (각 절 하단에 출처)</dd></div>
+      </dl>
+    </section>
+
+    <!-- ═══════ 00 시작하기 전에 ═══════ -->
+    <section class="section" id="intro">
+      <p class="sec-label"><span class="n">00</span>시작하기 전에</p>
+      <h2>기본편과 심화편의 경계</h2>
+      <p class="lede">
+        기본편은 네 가지가 각각 무엇인지를 다뤘습니다.
+        심화편은 그 네 가지가 실제 도구 안에서 어떻게 맞물려 도는지를 다룹니다.
+      </p>
+      <p>이 문서가 답하는 질문은 다섯 개입니다.</p>
+      <ul class="pointlist">
+        <li><b>왜 한 턴에 전부 같이 도는가</b><span>슬래시 커맨드, 스킬, 도구 호출, MCP가 같은 턴에 겹쳐 등장하는 구조를 그림으로 봅니다.</span></li>
+        <li><b>파일은 어디에 어떤 형태로 두는가</b><span>.claude 디렉터리의 실제 하이어라키와, 서브에이전트와 스킬과 커맨드의 형태 차이를 예시 코드로 봅니다.</span></li>
+        <li><b>GUI에서는 어디에 있는가</b><span>Claude 데스크톱 앱 기준으로 네 요소 각각의 관리 화면 위치를 확인합니다.</span></li>
+        <li><b>슬래시 커맨드란 무엇인가</b><span>빌트인, 번들 스킬, 커스텀 세 종류를 구분하고 실행 메커니즘을 봅니다.</span></li>
+        <li><b>하니스는 무엇을 조절하는가</b><span>프롬프트, 컨텍스트, 하니스 엔지니어링의 관계와, md 파일만으로 가능한 범위를 확인합니다.</span></li>
+      </ul>
+      <p>
+        예시는 Claude Code와 Claude 데스크톱 앱 기준입니다. 다만 파일 규약의 핵심인 SKILL.md는
+        오픈 표준이라 OpenAI Codex CLI와 Google Gemini CLI도 같은 형식을 읽습니다.
+        05절에서 하니스별 차이를 표로 정리합니다.
+      </p>
+    </section>
+
+    <!-- ═══════ 01 한 턴의 해부 ═══════ -->
+    <section class="section wide" id="anatomy">
+      <p class="sec-label"><span class="n">01</span>한 턴의 해부</p>
+      <h2>네 가지가 한 턴에 같이 도는 이유</h2>
+      <p class="lede">
+        네 요소는 같은 자리를 두고 고르는 선택지처럼 보이지만 서로 다른 층의 부품입니다.
+        층이 다르기 때문에 한 턴 안에서 겹쳐 도는 것이 정상 동작입니다.
+      </p>
+
+      <dl class="define">
+        <dt>한 문장씩</dt>
+        <dd>
+          슬래시 커맨드는 사람이 잡는 시작 손잡이입니다. 스킬은 그 손잡이가 대화에 밀어 넣는 프롬프트입니다.
+          도구 호출은 모델이 바깥으로 손을 뻗는 유일한 문법이고, MCP는 그 손이 닿는 외부 도구의 배선입니다.
+          서브에이전트는 이 전체가 별도 컨텍스트에서 한 번 더 도는 것입니다.
+        </dd>
+      </dl>
+
+      <figure class="diagram scroll">
+        <svg viewBox="0 0 940 446" role="img" aria-label="사용자의 입력이 하니스로 들어가고, 하니스가 선언 파일을 읽어 조립하며, 안에서 모델과 도구 실행이 반복 루프를 돌고, 도구 실행이 로컬 도구, MCP 서버, 서브에이전트로 나가는 전체 구조도">
+          <defs>
+            <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9" fill="none" stroke="#6e777f" stroke-width="1.4"/></marker>
+          </defs>
+
+          <rect class="d-box" x="375" y="14" width="190" height="54" rx="8"/>
+          <text class="d-t" x="470" y="37" text-anchor="middle">사용자</text>
+          <text class="d-n" x="470" y="55" text-anchor="middle">슬래시 커맨드, 질문, GUI 토글</text>
+          <path class="d-line" d="M470,68 L470,104" marker-end="url(#ar1)"/>
+          <text class="d-code" x="480" y="92">/fix-issue 123</text>
+
+          <rect class="d-frame" x="240" y="108" width="460" height="300" rx="10"/>
+          <text class="d-t" x="258" y="134">하니스</text>
+          <text class="d-n" x="322" y="134">Claude Code, Agent SDK가 이 층입니다</text>
+          <rect class="d-box-2" x="256" y="150" width="136" height="34" rx="7"/>
+          <text class="d-n" x="324" y="171" text-anchor="middle">프롬프트 조립</text>
+          <rect class="d-box-2" x="404" y="150" width="136" height="34" rx="7"/>
+          <text class="d-n" x="472" y="171" text-anchor="middle">권한, 훅</text>
+          <rect class="d-box-2" x="552" y="150" width="136" height="34" rx="7"/>
+          <text class="d-n" x="620" y="171" text-anchor="middle">컨텍스트 예산</text>
+
+          <rect class="d-dark" x="268" y="236" width="150" height="64" rx="8"/>
+          <text class="d-t d-on-dark" x="343" y="263" text-anchor="middle">모델</text>
+          <text class="d-n d-on-dark-2" x="343" y="281" text-anchor="middle">tool_use 방출</text>
+          <rect class="d-box" x="520" y="236" width="150" height="64" rx="8"/>
+          <text class="d-t" x="595" y="263" text-anchor="middle">도구 실행</text>
+          <text class="d-n" x="595" y="281" text-anchor="middle">권한 확인 후 실행</text>
+
+          <path class="d-line" d="M418,252 L514,252" marker-end="url(#ar1)"/>
+          <text class="d-code" x="466" y="245" text-anchor="middle">tool_use</text>
+          <path class="d-line" d="M520,284 L424,284" marker-end="url(#ar1)"/>
+          <text class="d-code" x="472" y="299" text-anchor="middle">tool_result</text>
+          <text class="d-n" x="470" y="336" text-anchor="middle">종료 조건을 만날 때까지 이 왕복을 반복합니다 (루프)</text>
+          <text class="d-n" x="470" y="384" text-anchor="middle">이 상자 전체를 설계하는 일이 하니스 엔지니어링입니다</text>
+
+          <rect class="d-frame" x="16" y="108" width="190" height="300" rx="10"/>
+          <text class="d-t" x="30" y="134">선언 파일</text>
+          <rect class="d-box-2" x="30" y="148" width="162" height="32" rx="7"/>
+          <text class="d-code" x="111" y="168" text-anchor="middle">CLAUDE.md, rules/</text>
+          <rect class="d-box-2" x="30" y="188" width="162" height="32" rx="7"/>
+          <text class="d-code" x="111" y="208" text-anchor="middle">skills/이름/SKILL.md</text>
+          <rect class="d-box-2" x="30" y="228" width="162" height="32" rx="7"/>
+          <text class="d-code" x="111" y="248" text-anchor="middle">agents/이름.md</text>
+          <rect class="d-box-2" x="30" y="268" width="162" height="32" rx="7"/>
+          <text class="d-code" x="111" y="288" text-anchor="middle">commands/이름.md</text>
+          <rect class="d-box" x="30" y="308" width="162" height="32" rx="7"/>
+          <text class="d-code" x="111" y="328" text-anchor="middle">settings.json, .mcp.json</text>
+          <text class="d-n" x="30" y="364">md: 프롬프트 재료, 확률적</text>
+          <text class="d-n" x="30" y="382">JSON: 강제 규칙, 결정적</text>
+          <path class="d-line" d="M206,200 L236,200" marker-end="url(#ar1)"/>
+          <text class="d-n" x="221" y="190" text-anchor="middle">읽어서 조립</text>
+
+          <rect class="d-frame" x="724" y="108" width="200" height="300" rx="10"/>
+          <text class="d-t" x="738" y="134">실행 대상</text>
+          <rect class="d-box" x="738" y="148" width="172" height="52" rx="8"/>
+          <text class="d-t" x="824" y="169" text-anchor="middle">로컬 도구</text>
+          <text class="d-n" x="824" y="187" text-anchor="middle">Bash, Read를 직접 실행</text>
+          <rect class="d-box-oat" x="738" y="214" width="172" height="52" rx="8"/>
+          <text class="d-t" x="824" y="235" text-anchor="middle">MCP 서버</text>
+          <text class="d-n" x="824" y="253" text-anchor="middle">GitHub, Figma, Xcode 연결</text>
+          <rect class="d-box-dash" x="738" y="280" width="172" height="52" rx="8"/>
+          <text class="d-t" x="824" y="301" text-anchor="middle">서브에이전트</text>
+          <text class="d-n" x="824" y="319" text-anchor="middle">하니스가 하나 더 뜹니다</text>
+          <path class="d-line" d="M670,244 L734,176" marker-end="url(#ar1)"/>
+          <path class="d-line" d="M670,252 L734,240" marker-end="url(#ar1)"/>
+          <path class="d-line" d="M670,262 L734,304" marker-end="url(#ar1)"/>
+        </svg>
+        <figcaption>
+          모델이 바깥에 손을 뻗는 문법은 도구 호출 하나입니다. 스킬과 서브에이전트와 MCP는 그 앞뒤에서
+          무엇을 컨텍스트에 넣을지, 어디서 실행할지를 정하는 부품입니다.
+          서브에이전트 상자 안에서는 이 그림 전체가 작은 규모로 다시 돌아갑니다.
+        </figcaption>
+      </figure>
+
+      <h3>시간 순서로 펼치면</h3>
+      <p>
+        커스텀 커맨드 <code>/fix-issue 123</code>을 입력한 순간부터 답이 나올 때까지입니다.
+        1번은 사람이, 2번과 3번은 하니스가, 4번부터는 모델이 주도합니다.
+      </p>
+
+      <figure class="diagram scroll">
+        <svg viewBox="0 0 920 548" role="img" aria-label="슬래시 커맨드 실행 시퀀스. 사용자가 입력하면 하니스가 커맨드 파일을 렌더링해 프롬프트로 주입하고, 모델이 tool_use를 내면 하니스가 MCP 서버나 로컬 도구를 실행해 결과를 돌려주는 반복 뒤에 최종 답변이 나온다">
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9" fill="none" stroke="#6e777f" stroke-width="1.4"/></marker>
+          </defs>
+
+          <rect class="d-box-2" x="30" y="16" width="150" height="48" rx="8"/>
+          <text class="d-t" x="105" y="45" text-anchor="middle">사용자</text>
+          <rect class="d-box-2" x="250" y="16" width="150" height="48" rx="8"/>
+          <text class="d-t" x="325" y="45" text-anchor="middle">하니스</text>
+          <rect class="d-dark" x="520" y="16" width="150" height="48" rx="8"/>
+          <text class="d-t d-on-dark" x="595" y="45" text-anchor="middle">모델</text>
+          <rect class="d-box-oat" x="740" y="16" width="165" height="48" rx="8"/>
+          <text class="d-t" x="822" y="38" text-anchor="middle">실행 대상</text>
+          <text class="d-n" x="822" y="55" text-anchor="middle">로컬 도구, MCP 서버</text>
+
+          <path class="d-rule" d="M105,64 L105,512" stroke-dasharray="3 5"/>
+          <path class="d-rule" d="M325,64 L325,512" stroke-dasharray="3 5"/>
+          <path class="d-rule" d="M595,64 L595,512" stroke-dasharray="3 5"/>
+          <path class="d-rule" d="M822,64 L822,512" stroke-dasharray="3 5"/>
+
+          <path class="d-line" d="M105,110 L319,110" marker-end="url(#ar2)"/>
+          <text class="d-s" x="222" y="99" text-anchor="middle">/fix-issue 123 입력</text>
+          <g class="d-chip"><circle cx="125" cy="110" r="11"/><text x="125" y="114" text-anchor="middle">1</text></g>
+          <text class="d-n" x="222" y="127" text-anchor="middle">슬래시 커맨드</text>
+
+          <rect class="d-box-2" x="245" y="152" width="230" height="48" rx="8"/>
+          <text class="d-s" x="360" y="172" text-anchor="middle">commands/fix-issue.md 렌더링</text>
+          <text class="d-n" x="360" y="189" text-anchor="middle">$ARGUMENTS를 123으로 치환</text>
+          <g class="d-chip"><circle cx="230" cy="176" r="11"/><text x="230" y="180" text-anchor="middle">2</text></g>
+          <text class="d-n" x="490" y="180">스킬과 같은 메커니즘</text>
+
+          <path class="d-line" d="M325,230 L589,230" marker-end="url(#ar2)"/>
+          <text class="d-s" x="460" y="219" text-anchor="middle">렌더링된 프롬프트를 대화에 주입</text>
+          <g class="d-chip"><circle cx="345" cy="230" r="11"/><text x="345" y="234" text-anchor="middle">3</text></g>
+
+          <rect class="d-box-dash" x="300" y="254" width="592" height="172" rx="8"/>
+          <text class="d-n" x="884" y="270" text-anchor="end">stop_reason이 tool_use인 동안 반복</text>
+
+          <path class="d-line" d="M595,290 L331,290" marker-end="url(#ar2)"/>
+          <text class="d-s" x="460" y="279" text-anchor="middle">tool_use: GitHub 이슈 조회 요청</text>
+          <g class="d-chip"><circle cx="575" cy="290" r="11"/><text x="575" y="294" text-anchor="middle">4</text></g>
+          <text class="d-n" x="460" y="306" text-anchor="middle">도구 호출</text>
+
+          <path class="d-line" d="M325,334 L816,334" marker-end="url(#ar2)"/>
+          <text class="d-s" x="570" y="323" text-anchor="middle">권한 확인 후 실행, MCP 서버 호출</text>
+          <g class="d-chip"><circle cx="345" cy="334" r="11"/><text x="345" y="338" text-anchor="middle">5</text></g>
+          <text class="d-n" x="570" y="350" text-anchor="middle">로컬 도구면 하니스가 직접 실행합니다</text>
+
+          <path class="d-line" d="M822,378 L331,378" marker-end="url(#ar2)"/>
+          <text class="d-code" x="570" y="368" text-anchor="middle">tool_result</text>
+          <g class="d-chip"><circle cx="800" cy="378" r="11"/><text x="800" y="382" text-anchor="middle">6</text></g>
+
+          <path class="d-line" d="M325,410 L589,410" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+          <text class="d-n" x="460" y="400" text-anchor="middle">결과를 모델에 주입하고 4번으로</text>
+          <g class="d-chip"><circle cx="345" cy="410" r="11"/><text x="345" y="414" text-anchor="middle">7</text></g>
+
+          <path class="d-line" d="M595,470 L111,470" marker-end="url(#ar2)"/>
+          <text class="d-s" x="350" y="459" text-anchor="middle">최종 답변</text>
+          <g class="d-chip"><circle cx="575" cy="470" r="11"/><text x="575" y="474" text-anchor="middle">8</text></g>
+        </svg>
+        <figcaption>
+          슬래시 커맨드(1), 스킬 메커니즘(2), 도구 호출(4), MCP(5)가 한 턴 안에 전부 등장합니다.
+          5번에서 Agent 도구가 호출되면 실행 대상 자리에 서브에이전트가 들어오고,
+          그 안에서 이 시퀀스가 별도 컨텍스트로 다시 돌아갑니다.
+        </figcaption>
+      </figure>
+
+      <h3>용어 한 줄 정리</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>용어</th><th>실체</th><th>발동 주체</th><th>예시</th></tr></thead>
+          <tbody>
+            <tr><td>도구 호출</td><td>API 규약. 모델이 <code>tool_use</code>를 내면 바깥 코드가 실행하고 <code>tool_result</code>로 돌려줍니다. 파일이 없는 유일한 요소입니다.</td><td>모델</td><td><code>Read</code>, <code>Bash</code>, <code>web_search</code></td></tr>
+            <tr><td>MCP</td><td>도구를 연결하는 오픈 표준. 서버가 도구 목록을 내놓으면 하니스가 모델에게 노출합니다.</td><td>연결은 사람, 호출은 모델</td><td>GitHub 서버, Xcode <code>mcpbridge</code></td></tr>
+            <tr><td>스킬</td><td>폴더 안의 <code>SKILL.md</code>. 설명 약 100토큰만 상주하고 본문은 발동될 때 로드됩니다.</td><td>모델 자동 또는 사람이 <code>/이름</code></td><td><code>/code-review</code>, pdf 스킬</td></tr>
+            <tr><td>서브에이전트</td><td><code>agents/이름.md</code>. 새 컨텍스트 창에서 돌고 마지막 메시지만 부모에게 돌아옵니다.</td><td>모델 위임 또는 <code>@agent-이름</code></td><td>코드 리뷰어, Explore</td></tr>
+            <tr><td>슬래시 커맨드</td><td>저장된 프롬프트를 부르는 손잡이. 빌트인은 CLI 코드가 직접 실행합니다.</td><td>사람</td><td><code>/fix-issue 123</code></td></tr>
+            <tr><td>훅</td><td><code>settings.json</code>에 배선된 스크립트. 지정한 이벤트마다 하니스가 반드시 실행합니다.</td><td>하니스 (결정적)</td><td>PreToolUse로 <code>rm</code> 차단</td></tr>
+            <tr><td>CLAUDE.md</td><td>세션마다 컨텍스트에 자동 주입되는 사실 모음. 절차문이 자라면 스킬로 이사할 신호입니다.</td><td>하니스 자동 주입</td><td>빌드 명령, 컨벤션</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>도구 호출 한 번의 실제 모양</h3>
+      <p>
+        네 요소 중 도구 호출만 파일이 없습니다. API 요청과 응답에 들어가는 JSON이 실체의 전부입니다.
+      </p>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">요청과 응답에 들어가는 세 조각</span><button class="copy-btn" data-copy="code-tooluse">복사</button></div>
+        <pre id="code-tooluse"><code><span class="c-dim">// 1. 요청에 도구를 정의합니다</span>
+"tools": [{
+  "name": "get_weather",
+  "description": "도시의 현재 날씨를 조회합니다",
+  "input_schema": {
+    "type": "object",
+    "properties": { "city": { "type": "string" } },
+    "required": ["city"]
+  }
+}]
+
+<span class="c-dim">// 2. 모델의 응답 (stop_reason: "tool_use")</span>
+{ "type": "tool_use", "name": "get_weather", "input": { "city": "Seoul" } }
+
+<span class="c-dim">// 3. 실행 결과를 다음 요청에 넣어 돌려보냅니다</span>
+{ "type": "tool_result", "content": "맑음, 31도" }</code></pre>
+        <p class="snippet-note">실행은 2와 3 사이, 모델 바깥에서 일어납니다. 이 왕복을 자동으로 돌려 주는 코드가 하니스입니다.</p>
+      </div>
+
+      <div class="note">
+        <span class="label">슬래시와 골뱅이</span>
+        연결된 MCP 서버가 프롬프트를 내놓으면 <code>/mcp__서버명__프롬프트명</code> 형태의 슬래시 커맨드로 나타납니다.
+        스킬은 <code>/스킬이름</code>으로 부르고, 서브에이전트만 <code>@agent-이름</code>이라는 별도 문법으로 부릅니다.
+      </div>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use with Claude</a>, <a href="https://code.claude.com/docs/en/skills">Extend Claude with skills</a>, <a href="https://code.claude.com/docs/en/sub-agents">Subagents</a>, <a href="https://code.claude.com/docs/en/mcp">Connect Claude Code to tools via MCP</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/api/docs/guides/function-calling">Function calling</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://ai.google.dev/gemini-api/docs/function-calling">Function calling with the Gemini API</a></span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 02 파일 규약 ═══════ -->
+    <section class="section wide" id="files">
+      <p class="sec-label"><span class="n">02</span>파일 규약</p>
+      <h2>.claude 디렉터리의 실제 하이어라키</h2>
+      <p class="lede">
+        전부 .claude 폴더에 md로 넣는다는 통념은 절반만 맞습니다.
+        셋 다 md인 것은 맞지만 형태가 서로 다르고, md가 아닌 구성원이 오히려 동작을 강제합니다.
+      </p>
+
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">어디에 무엇을 두나 (사용자 스코프 + 프로젝트 스코프)</span><button class="copy-btn" data-copy="code-tree">복사</button></div>
+        <pre id="code-tree"><code>~                                <span class="c-dim">홈 디렉터리</span>
+├── .claude/                     <span class="c-dim">사용자 스코프: 모든 프로젝트에 적용</span>
+│   ├── <span class="c-md">CLAUDE.md</span>                <span class="c-dim">모든 세션에 들어가는 개인 지침</span>
+│   ├── settings.json            <span class="c-dim">전역 권한과 훅</span>
+│   ├── agents/
+│   │   └── <span class="c-md">reviewer.md</span>          <span class="c-dim">낱개 md 파일 하나 = 서브에이전트 하나</span>
+│   ├── skills/
+│   │   └── deploy/
+│   │       └── <span class="c-md">SKILL.md</span>         <span class="c-dim">폴더 하나 = 스킬 하나, 파일명 고정</span>
+│   └── commands/
+│       └── <span class="c-md">fix-issue.md</span>         <span class="c-dim">낱개 md 파일 하나 = /fix-issue</span>
+├── .claude.json                 <span class="c-dim">MCP 유저 스코프. 폴더처럼 보이지만 파일입니다</span>
+│
+└── 프로젝트/
+    ├── <span class="c-md">CLAUDE.md</span>                <span class="c-dim">팀 공유 사실, 커밋 대상</span>
+    ├── .mcp.json                <span class="c-dim">MCP 프로젝트 스코프. .claude 밖 루트에 둡니다</span>
+    └── .claude/
+        ├── settings.json        <span class="c-dim">팀 공유 권한과 훅, 커밋 대상</span>
+        ├── settings.local.json  <span class="c-dim">개인용, gitignore 대상</span>
+        ├── rules/
+        │   └── <span class="c-md">swift-style.md</span>   <span class="c-dim">paths 조건으로 골라 적용되는 지침</span>
+        ├── agents/
+        │   └── <span class="c-md">code-reviewer.md</span>
+        ├── skills/
+        │   └── release-check/
+        │       ├── <span class="c-md">SKILL.md</span>
+        │       ├── references/  <span class="c-dim">읽을 때만 컨텍스트에 로드</span>
+        │       └── scripts/     <span class="c-dim">실행만 되고 코드는 컨텍스트 밖</span>
+        └── commands/
+            └── <span class="c-md">deploy.md</span>        <span class="c-dim">/deploy, 스킬과 같은 메커니즘</span></code></pre>
+        <p class="snippet-note">파란 글씨가 md(모델이 읽는 프롬프트)입니다. settings.json과 .mcp.json은 하니스가 파싱해 강제하는 설정이고, <code>~/.claude.json</code>은 <code>~/.claude/</code> 폴더 밖, 홈 바로 아래에 놓인 파일이라 자주 헷갈립니다.</p>
+      </div>
+
+      <h3>형태가 다른 세 가지</h3>
+      <ul class="pointlist">
+        <li><b>서브에이전트는 낱개 md 파일입니다</b><span><code>.claude/agents/이름.md</code>. frontmatter의 <code>name</code>과 <code>description</code> 두 개만 필수이고, 파일명은 자유입니다. frontmatter가 아예 없으면 서브에이전트로 로드되지 않습니다.</span></li>
+        <li><b>스킬은 폴더이고 파일명이 고정입니다</b><span><code>.claude/skills/이름/SKILL.md</code>. 폴더 하나가 스킬 하나이며, 진입 파일명은 반드시 SKILL.md로 고정입니다. 필수 필드는 없고 <code>description</code>만 권장입니다.</span></li>
+        <li><b>커맨드는 낱개 md이고 스킬과 통합됐습니다</b><span><code>.claude/commands/이름.md</code>. frontmatter가 없어도 동작합니다. <code>commands/deploy.md</code>와 <code>skills/deploy/SKILL.md</code>는 똑같이 <code>/deploy</code>를 만들고, 이름이 겹치면 스킬이 이깁니다.</span></li>
+      </ul>
+
+      <h3>예시 1. 서브에이전트</h3>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">.claude/agents/code-reviewer.md</span><button class="copy-btn" data-copy="code-agent">복사</button></div>
+        <pre id="code-agent"><code>---
+name: code-reviewer
+description: 코드 변경을 리뷰합니다. 수정 작업이 끝난 뒤에 사용하세요.
+tools: Read, Grep, Glob
+model: haiku
+maxTurns: 15
+---
+
+너는 시니어 코드 리뷰어다.
+변경된 파일을 읽고 문제를 심각도 순으로 보고한다.
+직접 수정하지 말고 보고만 한다.</code></pre>
+        <p class="snippet-note">본문은 새로 뜨는 에이전트의 시스템 프롬프트가 됩니다. 그래서 2인칭 지시문으로 씁니다. <code>description</code>은 모델이 언제 위임할지 판단하는 근거입니다. <code>tools</code>로 도구를 좁히고 <code>model</code>로 경량모델을 지정해 비용을 줄입니다.</p>
+      </div>
+
+      <h3>예시 2. 스킬</h3>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">.claude/skills/release-check/SKILL.md</span><button class="copy-btn" data-copy="code-skill">복사</button></div>
+        <pre id="code-skill"><code>---
+name: release-check
+description: 배포 전 점검을 실행합니다. 릴리스, 배포, 출시 준비를 요청받으면 사용하세요.
+---
+
+## 순서
+1. scripts/preflight.sh 를 실행하고 실패 항목을 보고한다.
+2. references/checklist.md 의 항목을 순서대로 확인한다.
+3. 전부 통과하면 결과를 표로 정리한다.</code></pre>
+        <p class="snippet-note">평소에는 name과 description 약 100토큰만 상주하고, 발동될 때 본문이 로드됩니다. references/ 문서는 읽는 시점에 컨텍스트로 들어오지만, scripts/ 코드는 실행만 되고 출력만 들어옵니다. 이 3단계가 점진적 공개입니다.</p>
+      </div>
+
+      <h3>예시 3. 커스텀 커맨드</h3>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">.claude/commands/fix-issue.md</span><button class="copy-btn" data-copy="code-cmd">복사</button></div>
+        <pre id="code-cmd"><code>---
+description: GitHub 이슈를 수정합니다
+argument-hint: [이슈 번호]
+---
+
+GitHub 이슈 $ARGUMENTS 를 우리 코딩 규칙에 맞게 수정하라.
+
+현재 상태:
+!`git status --short`
+
+규칙 문서: @docs/CONTRIBUTING.md</code></pre>
+        <p class="snippet-note"><code>/fix-issue 123</code>을 치면 $ARGUMENTS가 123으로 치환되고, <code>!</code> 줄은 셸 실행 결과로, <code>@</code> 경로는 파일 내용으로 바뀐 뒤 대화에 주입됩니다.</p>
+      </div>
+
+      <h3>예시 4. md가 아닌 두 파일</h3>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">.mcp.json (프로젝트 루트, 커밋 대상)</span><button class="copy-btn" data-copy="code-mcp">복사</button></div>
+        <pre id="code-mcp"><code>{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "xcode": {
+      "command": "xcrun",
+      "args": ["mcpbridge"]
+    }
+  }
+}</code></pre>
+        <p class="snippet-note">원격 서버는 url로, 로컬 서버는 command로 붙습니다. 팀원이 클론하면 같은 연결을 갖게 됩니다. Xcode 26.3부터는 Xcode 자체가 MCP 서버라서 <code>xcrun mcpbridge</code>로 연결합니다.</p>
+      </div>
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">.claude/settings.json (권한과 훅)</span><button class="copy-btn" data-copy="code-settings">복사</button></div>
+        <pre id="code-settings"><code>{
+  "permissions": {
+    "allow": ["Bash(npm test:*)", "Read(**)"],
+    "deny": ["Bash(rm -rf:*)", "Read(.env)"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "swiftformat ." }]
+      }
+    ]
+  }
+}</code></pre>
+        <p class="snippet-note">파일을 고칠 때마다 포매터가 반드시 돕니다. md에 적은 지침은 확률적으로 지켜지지만, 여기 적은 규칙은 하니스가 예외 없이 실행합니다.</p>
+      </div>
+
+      <div class="note warn">
+        <span class="label">우선순위가 서로 반대입니다</span>
+        같은 이름이 두 스코프에 있을 때, 서브에이전트는 프로젝트가 개인 설정을 이기고
+        스킬은 개인이 프로젝트를 이깁니다. 둘을 나란히 가르칠 때 걸리는 함정입니다.
+        MCP는 로컬, 프로젝트, 유저 순서로 이깁니다.
+      </div>
+
+      <div class="note">
+        <span class="label">이식성 주의</span>
+        SKILL.md는 오픈 표준이라 여섯 필드(name, description, license, compatibility, metadata, allowed-tools)만
+        표준입니다. <code>argument-hint</code> 같은 Claude Code 전용 필드가 든 스킬을 claude.ai에 업로드하면
+        무시되지 않고 하드 에러가 납니다.
+      </div>
+
+      <div class="boundary">
+        <span class="label">같은 md라도 본문의 역할이 다릅니다</span>
+        스킬과 커맨드의 본문은 대화에 주입되는 프롬프트이고, 서브에이전트의 본문은 새로 뜨는 에이전트의
+        시스템 프롬프트입니다. 이것이 셋을 가르는 가장 깔끔한 기준입니다.
+      </div>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/skills">Extend Claude with skills</a>, <a href="https://code.claude.com/docs/en/sub-agents">Subagents</a>, <a href="https://code.claude.com/docs/en/mcp">MCP 스코프</a>, <a href="https://code.claude.com/docs/en/claude-directory">Explore the .claude directory</a>, <a href="https://code.claude.com/docs/en/memory">Memory (CLAUDE.md)</a>, <a href="https://code.claude.com/docs/en/hooks">Hooks</a></span></div>
+        <div class="src-row"><span class="src-vendor">표준</span><span><a href="https://agentskills.io/specification">Agent Skills 사양 (agentskills.io)</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/codex/skills">Codex skills</a> (같은 SKILL.md, 경로는 <code>.agents/skills</code>)</span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://geminicli.com/docs/cli/skills/">Gemini CLI skills</a> (같은 표준, 경로는 <code>.gemini/skills</code>)</span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 03 데스크톱 앱 ═══════ -->
+    <section class="section wide" id="desktop">
+      <p class="sec-label"><span class="n">03</span>데스크톱 앱</p>
+      <h2>GUI에서는 어디에 있나</h2>
+      <p class="lede">
+        데스크톱 앱은 하나이고 그 안에 Chat, Cowork, Code 세 탭이 있습니다.
+        Code 탭이 곧 Claude Code입니다. 네 요소가 GUI에 노출된 정도는 전부 다릅니다.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>요소</th><th>GUI 위치</th><th>할 수 있는 것</th><th>경계</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>스킬</td>
+              <td>사이드바 Customize의 Skills</td>
+              <td>목록 확인, 개별 켜고 끄기, zip 업로드로 내 스킬 추가. 엑셀, 워드, PPT, PDF 같은 기본 스킬도 같은 목록에 있습니다.</td>
+              <td>전제 조건으로 Settings의 Capabilities에서 코드 실행을 먼저 켜야 합니다.</td>
+            </tr>
+            <tr>
+              <td>MCP</td>
+              <td>Customize의 Connectors</td>
+              <td>원격 서버를 이름과 URL로 추가. 서버가 내놓은 도구를 하나씩 켜고 끄고, 도구 권한을 항상 허용, 승인 필요, 차단 중에서 고릅니다.</td>
+              <td>커스텀 커넥터는 Anthropic 클라우드에서 접속하므로 localhost와 사내망 서버는 연결되지 않습니다. 로컬 서버는 아래 세 경로를 씁니다.</td>
+            </tr>
+            <tr>
+              <td>도구 호출</td>
+              <td>정의하는 화면이 없습니다</td>
+              <td>켜고 끄기만 가능합니다. 웹 검색은 입력창에서 대화 단위로, 코드 실행은 Settings의 Capabilities에서 계정 단위로 켭니다.</td>
+              <td>스키마를 직접 쓰는 자리는 API와 MCP뿐입니다.</td>
+            </tr>
+            <tr>
+              <td>서브에이전트</td>
+              <td>Chat 탭에는 없습니다</td>
+              <td>플러그인에 묶여 들어오지만 채팅에서는 비활성으로 표시되고, 실제 실행은 Cowork와 Code 탭에서만 됩니다.</td>
+              <td>파일로 정의하는 서브에이전트는 Claude Code 전용입니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>로컬 MCP 서버를 붙이는 세 경로</h3>
+      <ol class="steps">
+        <li><b>패키지가 있다면 확장 설치</b><span>Settings의 Extensions에서 .mcpb 번들을 설치합니다. 예전 .dxt가 이름을 바꾼 것으로, 압축 안의 manifest.json이 서버 정보를 선언합니다.</span></li>
+        <li><b>패키지가 없다면 설정 파일 직접 편집</b><span>Settings의 Developer에서 Edit Config를 누르면 <code>claude_desktop_config.json</code>이 열립니다. 저장 후 앱을 완전히 종료했다가 다시 실행해야 반영됩니다.</span></li>
+        <li><b>공개 서버라면 원격 커넥터로</b><span>서버를 인터넷에 올릴 수 있다면 Connectors에서 URL로 추가하는 편이 관리가 쉽습니다.</span></li>
+      </ol>
+
+      <div class="snippet">
+        <div class="snippet-head"><span class="snippet-name">~/Library/Application Support/Claude/claude_desktop_config.json</span><button class="copy-btn" data-copy="code-desktop">복사</button></div>
+        <pre id="code-desktop"><code>{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/me/Desktop"]
+    }
+  }
+}</code></pre>
+        <p class="snippet-note">macOS 경로 기준이며 Windows는 <code>%APPDATA%\Claude\</code> 아래에 있습니다. 여기 정의한 서버는 Chat 탭과 로컬 Code 탭 세션 양쪽에서 쓸 수 있습니다.</p>
+      </div>
+
+      <div class="note">
+        <span class="label">플랜 기준</span>
+        디렉터리에 등록된 기본 커넥터는 전 플랜에서 쓸 수 있고, 커스텀 커넥터는 무료 플랜에서 1개까지입니다.
+        스킬 zip 업로드는 개인 계정 단위이며, 플러그인은 유료 플랜 전용입니다.
+        Team과 Enterprise는 조직 설정에서 소유자가 먼저 켜야 구성원에게 보입니다.
+      </div>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://support.claude.com/en/articles/12512180-use-skills-in-claude">Use skills in Claude</a>, <a href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp">Custom connectors (remote MCP)</a>, <a href="https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop">Local MCP servers on Claude Desktop</a>, <a href="https://support.claude.com/en/articles/13837440-use-plugins-in-claude">Use plugins in Claude</a>, <a href="https://code.claude.com/docs/en/desktop">Claude Code in the Desktop app</a></span></div>
+        <div class="src-row"><span class="src-vendor">Anthropic 블로그</span><span><a href="https://www.anthropic.com/engineering/desktop-extensions">Desktop Extensions (.mcpb)</a></span></div>
+        <div class="src-row"><span class="src-vendor">MCP 공식</span><span><a href="https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers">Connect to local MCP servers</a></span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 04 슬래시 커맨드 ═══════ -->
+    <section class="section" id="slash">
+      <p class="sec-label"><span class="n">04</span>슬래시 커맨드</p>
+      <h2>슬래시 커맨드는 무엇인가</h2>
+      <p class="lede">
+        한 메뉴에 성격이 다른 세 종류가 섞여 있습니다.
+        실체는 저장된 프롬프트 템플릿과, 그것을 대화에 밀어 넣는 손잡이입니다.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>종류</th><th>실행 주체</th><th>예시</th></tr></thead>
+          <tbody>
+            <tr><td>빌트인</td><td>CLI 코드가 직접 실행합니다. 모델에게 가지 않습니다.</td><td><code>/clear</code>, <code>/compact</code>, <code>/model</code>, <code>/resume</code>, <code>/permissions</code>, <code>/usage</code></td></tr>
+            <tr><td>번들 스킬</td><td>모델에게 넘어가는 프롬프트입니다. 문서의 커맨드 표에서 [Skill] 표시로 구분합니다.</td><td><code>/code-review</code>, <code>/debug</code>, <code>/loop</code>, <code>/security-review</code></td></tr>
+            <tr><td>커스텀</td><td>내가 만든 md 파일을 렌더링해 대화에 주입합니다.</td><td><code>/fix-issue</code>, <code>/deploy</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>커스텀 커맨드의 메커니즘</h3>
+      <ol class="steps">
+        <li><b>입력</b><span><code>/fix-issue 123</code>을 칩니다. 파일명이 커맨드 이름이 됩니다.</span></li>
+        <li><b>렌더링</b><span>하니스가 파일을 열어 <code>$ARGUMENTS</code>를 인자로 치환하고, <code>!</code> 줄을 셸로 실행해 출력으로 바꾸고, <code>@</code> 경로를 파일 내용으로 인라인합니다.</span></li>
+        <li><b>주입</b><span>렌더링된 텍스트가 사용자 쪽 메시지로 대화에 들어갑니다. 이후는 일반 턴과 같고, 주입된 내용은 세션이 끝날 때까지 남습니다.</span></li>
+      </ol>
+      <p>
+        파일에 "이슈 $ARGUMENTS 를 수정하라"라고 써 두고 <code>/fix-issue 123</code>을 치면,
+        모델이 실제로 받는 것은 "이슈 123 을 수정하라"입니다. 스킬을 <code>/스킬이름</code>으로 부를 때도
+        같은 일이 일어납니다.
+      </p>
+
+      <h3>발동 방향을 잠그는 두 필드</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>frontmatter</th><th>사람이 /이름</th><th>모델이 자동</th><th>쓰는 경우</th></tr></thead>
+          <tbody>
+            <tr><td>기본값</td><td>가능</td><td>가능</td><td>설명이 항상 컨텍스트에 있어 모델이 알아서 로드합니다.</td></tr>
+            <tr><td><code>disable-model-invocation: true</code></td><td>가능</td><td>불가</td><td>배포처럼 부작용이 있는 작업. 코드가 준비돼 보인다고 모델이 배포를 결정하면 안 되기 때문입니다.</td></tr>
+            <tr><td><code>user-invocable: false</code></td><td>불가</td><td>가능</td><td>메뉴에는 숨기고 모델만 쓰는 내부 절차.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="label">채팅 탭과의 차이</span>
+        데스크톱 앱의 Chat 탭에서 슬래시를 치면 커넥터와 도구 메뉴가 열립니다. 채팅에서 스킬은
+        타이핑 없이 자동으로 발동하고, 슬래시 메뉴가 온전히 있는 곳은 Code 탭과 Cowork입니다.
+      </div>
+
+      <div class="boundary">
+        <span class="label">다른 셋과의 차이</span>
+        슬래시 커맨드는 네 요소 목록 밖에 있습니다. 사람이 그것들을 부르는 손잡이입니다.
+        커스텀 커맨드는 스킬과 같은 메커니즘으로 통합됐고, 서브에이전트만 <code>@agent-이름</code>이라는
+        별도 문법을 씁니다.
+      </div>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/commands">Commands reference</a>, <a href="https://code.claude.com/docs/en/skills">Extend Claude with skills</a>, <a href="https://code.claude.com/docs/en/mcp">MCP prompts as slash commands</a>, <a href="https://code.claude.com/docs/en/agent-sdk/slash-commands">Agent SDK slash commands</a></span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 05 하니스 ═══════ -->
+    <section class="section wide" id="harness">
+      <p class="sec-label"><span class="n">05</span>하니스</p>
+      <h2>하니스 엔지니어링이 조절하는 것</h2>
+      <p class="lede">
+        모델은 텍스트를 뱉을 뿐이고, 그것을 에이전트로 만드는 것은 전부 바깥 코드입니다.
+        그 코드 전체를 설계하는 일이 하니스 엔지니어링입니다.
+      </p>
+
+      <figure class="diagram scroll">
+        <svg viewBox="0 0 900 272" role="img" aria-label="하니스 엔지니어링 상자 안에 루프 설계가 있고, 컨텍스트 엔지니어링 상자 안에 프롬프트 엔지니어링이 있으며, 하니스가 매 턴 컨텍스트를 조립한다는 화살표가 둘을 잇는다">
+          <defs>
+            <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9" fill="none" stroke="#6e777f" stroke-width="1.4"/></marker>
+          </defs>
+          <rect class="d-frame" x="20" y="36" width="400" height="190" rx="10"/>
+          <text class="d-t" x="40" y="66">하니스 엔지니어링</text>
+          <text class="d-n" x="40" y="88">모델 바깥 코드 전체를 설계합니다</text>
+          <text class="d-n" x="40" y="106">실행 계층, 권한, 훅, 상태, 피드백 신호</text>
+          <rect class="d-box-oat" x="40" y="126" width="230" height="56" rx="8"/>
+          <text class="d-t" x="155" y="150" text-anchor="middle">루프 설계</text>
+          <text class="d-n" x="155" y="168" text-anchor="middle">반복 구조, 종료 조건, 검증 단계</text>
+          <text class="d-n" x="40" y="214">표면: settings.json, 훅, SDK 옵션</text>
+
+          <rect class="d-frame" x="480" y="36" width="400" height="190" rx="10"/>
+          <text class="d-t" x="500" y="66">컨텍스트 엔지니어링</text>
+          <text class="d-n" x="500" y="88">매 턴 창에 무엇을 넣고 뺄지 고릅니다</text>
+          <text class="d-n" x="500" y="106">컴팩션, 메모리, 점진적 로드, 격리</text>
+          <rect class="d-box-oat" x="500" y="126" width="230" height="56" rx="8"/>
+          <text class="d-t" x="615" y="150" text-anchor="middle">프롬프트 엔지니어링</text>
+          <text class="d-n" x="615" y="168" text-anchor="middle">지시문 자체를 다듬습니다</text>
+          <text class="d-n" x="500" y="214">재료: CLAUDE.md, 스킬, 서브에이전트 md</text>
+
+          <path class="d-line" d="M420,131 L476,131" marker-end="url(#ar3)"/>
+          <text class="d-s" x="448" y="119" text-anchor="middle">매 턴 조립</text>
+        </svg>
+        <figcaption>
+          프롬프트 엔지니어링은 컨텍스트 엔지니어링의 부분집합이고, 그 컨텍스트를 매 턴 실제로 조립하는
+          주체가 하니스입니다. 루프 엔지니어링이라는 말은 표준 용어는 아니고, 하니스의 심장인 반복 구조
+          설계를 따로 부를 때 씁니다.
+        </figcaption>
+      </figure>
+
+      <h3>코드단의 손잡이 열 가지</h3>
+      <ul class="pointlist">
+        <li><b>루프 자체</b><span>stop_reason이 tool_use인 동안 실행하고 다시 호출하는 while문, 최대 턴 수, 종료 조건, 실패 시 재시도.</span></li>
+        <li><b>시스템 프롬프트 조립</b><span>정적 지침에 작업 디렉터리, git 상태, 날짜, CLAUDE.md, 스킬 메타데이터 같은 동적 상태를 매 턴 합성합니다.</span></li>
+        <li><b>도구 레지스트리와 게이팅</b><span>어떤 도구를 어떤 스키마로 언제 노출할지. 도구가 많으면 전부 올리지 않고 검색해서 지연 로딩합니다.</span></li>
+        <li><b>실행 계층</b><span>샌드박스, 타임아웃, 출력 절단. 에러를 예외로 터뜨리지 않고 tool_result로 되돌려 모델이 대응하게 만드는 규약도 여기 삽니다.</span></li>
+        <li><b>권한 게이트</b><span>allow와 deny 규칙, 사람 승인 인터럽트, 위험 명령 차단.</span></li>
+        <li><b>컨텍스트 예산 관리</b><span>컴팩션 시점, 오래된 도구 결과 정리, 프롬프트 캐시 경계 배치.</span></li>
+        <li><b>훅</b><span>PreToolUse에서 특정 호출을 막고 PostToolUse에서 포매터를 돌리는 식으로, 라이프사이클 이벤트에 결정적 코드를 끼웁니다.</span></li>
+        <li><b>서브에이전트 오케스트레이션</b><span>격리 컨텍스트를 만들고 마지막 메시지만 회수하는 규약, 병렬 실행.</span></li>
+        <li><b>상태와 기억</b><span>세션 저장과 재개, 메모리 파일, 할 일 목록.</span></li>
+        <li><b>피드백 채널</b><span>테스트, 린터, 빌드, 스크린샷처럼 모델이 자기 결과를 검증할 신호를 공급하는 배관. 하니스 엔지니어링의 절반은 이 검증 신호 설계입니다.</span></li>
+      </ul>
+
+      <h3>실제 하니스들</h3>
+      <p>
+        세 회사의 하니스 전부가 스킬만큼은 같은 오픈 표준(SKILL.md)을 읽습니다. 경로와 멀티에이전트
+        방식이 다를 뿐입니다.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>하니스</th><th>만든 곳</th><th>파일 규약</th><th>멀티에이전트</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code</td><td>Anthropic</td><td><code>.claude/skills</code>, <code>.claude/agents</code>, <code>.mcp.json</code>, <code>settings.json</code></td><td>Agent 도구로 서브에이전트에 위임</td></tr>
+            <tr><td>Codex CLI</td><td>OpenAI</td><td><code>.agents/skills</code> (SKILL.md 동일)</td><td>Agents SDK의 핸드오프. <code>transfer_to_에이전트</code>라는 도구로 노출됩니다</td></tr>
+            <tr><td>Gemini CLI</td><td>Google</td><td><code>.gemini/skills</code> 또는 <code>.agents/skills</code> (SKILL.md 동일)</td><td>ADK의 멀티에이전트 패턴</td></tr>
+            <tr><td>Claude Agent SDK</td><td>Anthropic</td><td>코드의 agents 옵션으로 정의, .claude 규약도 읽습니다</td><td>프로그래매틱 서브에이전트</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>md 파일만으로 어디까지 가능한가</h3>
+      <p>
+        md로 하는 일은 이미 있는 하니스(Claude Code)를 설정하는 것입니다. 하니스 자체를 새로 만드는
+        일은 코드의 영역입니다. 그런데 이 설정 표면이 생각보다 깊어서, 서브에이전트 frontmatter의 <code>tools</code>,
+        <code>model</code>, <code>maxTurns</code>만으로 도구 제한, 모델 라우팅, 턴 예산까지 조절됩니다.
+        경계는 보장입니다. md는 모델에게 주는 조언이라 따를 확률이 높을 뿐 강제가 아니고,
+        반드시 일어나야 하는 것은 settings.json의 권한과 훅, MCP 서버 코드, SDK의 루프처럼
+        하니스가 실행하는 층에 둬야 합니다.
+      </p>
+      <div class="boundary">
+        <span class="label">판단 기준 한 줄</span>
+        어겨도 복구되는 규칙은 md에 쓰고, 어기면 사고가 나는 규칙은 settings.json과 훅에 씁니다.
+        커밋 전 테스트를 CLAUDE.md에 쓰면 대체로 지켜지는 부탁이고, PreToolUse 훅으로 걸면 예외 없는 법이
+        됩니다.
+      </div>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Effective context engineering for AI agents</a>, <a href="https://code.claude.com/docs/en/hooks">Hooks</a>, <a href="https://code.claude.com/docs/en/settings">Settings</a>, <a href="https://code.claude.com/docs/en/agent-sdk/subagents">Agent SDK subagents</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/api/docs/guides/agents/orchestration">Orchestration and handoffs</a>, <a href="https://developers.openai.com/codex/skills">Codex skills</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://adk.dev/workflows/collaboration/">ADK collaborative workflows</a>, <a href="https://geminicli.com/docs/cli/skills/">Gemini CLI skills</a></span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 06 정석 셋팅 ═══════ -->
+    <section class="section" id="setup">
+      <p class="sec-label"><span class="n">06</span>정석 셋팅</p>
+      <h2>낮은 층부터 채우는 여덟 단계</h2>
+      <p class="lede">
+        원칙은 하나입니다. 통하는 가장 낮은 층에 두고, 필요해질 때만 한 층씩 올립니다.
+      </p>
+      <ol class="steps">
+        <li><b>CLAUDE.md에 사실만 짧게</b><span>빌드 명령, 컨벤션, 디렉터리 구조. 절차문이 자라기 시작하면 이사 신호입니다.</span></li>
+        <li><b>자란 절차는 스킬로 추출</b><span>본문은 SKILL.md에, 긴 자료는 references/에 빼서 읽을 때만 로드되게, 결정적인 단계는 scripts/에 빼서 코드가 컨텍스트에 안 들어가게 합니다.</span></li>
+        <li><b>부작용 있는 워크플로는 사람 전용으로</b><span>배포 같은 것은 disable-model-invocation을 걸어 슬래시로만 부릅니다.</span></li>
+        <li><b>탐색과 병렬 작업은 서브에이전트로</b><span>도구를 좁히고 경량모델을 지정해 본 대화의 컨텍스트와 비용을 지킵니다.</span></li>
+        <li><b>외부 시스템은 .mcp.json으로 커밋</b><span>팀원이 클론하면 같은 연결을 갖게 됩니다.</span></li>
+        <li><b>보장이 필요한 규칙은 권한과 훅으로</b><span>차단 목록, 자동 포매팅, 위험 명령 가드가 settings.json에 삽니다.</span></li>
+        <li><b>검증을 싸게 만들기</b><span>테스트와 린트 명령을 문서화해 두면 모델이 고치고 스스로 확인하는 피드백 루프가 돌기 시작합니다.</span></li>
+        <li><b>제품이 에이전트 자체가 되면 SDK로</b><span>자기 루프와 자기 도구를 코드로 잡되, SDK도 같은 .claude 규약을 읽기 때문에 위에서 쌓은 md 자산이 그대로 이월됩니다.</span></li>
+      </ol>
+      <p>
+        기본편의 네 가지 요소는 하니스가 사용자에게 열어 둔 설정 표면이고, 하니스 엔지니어링은
+        그 표면 아래 코드를 직접 잡는 일입니다. <code>/code-review</code> 한 번에 이 층들이 전부
+        접혀 들어 있습니다.
+      </p>
+
+      <div class="sources">
+        <span class="label">출처</span>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/memory">Memory</a>, <a href="https://code.claude.com/docs/en/skills">Skills</a>, <a href="https://code.claude.com/docs/en/mcp">MCP</a>, <a href="https://code.claude.com/docs/en/hooks">Hooks</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices">Skill authoring best practices</a></span></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 07 참고 자료 ═══════ -->
+    <section class="section" id="refs">
+      <p class="sec-label"><span class="n">07</span>참고 자료</p>
+      <h2>요소별 공식 문서 모음</h2>
+      <p class="lede">
+        본문 각 절의 출처를 요소별로 다시 모았습니다. 전부 공식 문서이거나 공개 표준 사이트입니다.
+      </p>
+
+      <h3>도구 호출</h3>
+      <div class="sources" style="margin-top:0.5rem; padding-top:0; border-top:none;">
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use with Claude</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works">How tool use works</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools">Define tools</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/api/docs/guides/function-calling">Function calling</a>, <a href="https://developers.openai.com/api/docs/guides/tools">Using tools</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://ai.google.dev/gemini-api/docs/function-calling">Function calling with the Gemini API</a></span></div>
+      </div>
+
+      <h3>MCP</h3>
+      <div class="sources" style="margin-top:0.5rem; padding-top:0; border-top:none;">
+        <div class="src-row"><span class="src-vendor">표준</span><span><a href="https://modelcontextprotocol.io/docs/learn/architecture">MCP 아키텍처</a>, <a href="https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers">로컬 서버 연결</a>, <a href="https://github.com/modelcontextprotocol/mcpb">.mcpb 번들 사양</a></span></div>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/mcp">Claude Code MCP</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector">MCP connector (API)</a>, <a href="https://www.anthropic.com/engineering/desktop-extensions">Desktop Extensions</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp">Connectors and MCP</a>, <a href="https://developers.openai.com/api/docs/mcp">MCP 문서</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-official-mcp-support-for-google-services">Google 서비스의 공식 MCP 지원</a></span></div>
+      </div>
+
+      <h3>서브에이전트</h3>
+      <div class="sources" style="margin-top:0.5rem; padding-top:0; border-top:none;">
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/sub-agents">Subagents</a>, <a href="https://code.claude.com/docs/en/agent-sdk/subagents">Agent SDK subagents</a>, <a href="https://anthropic.skilljar.com/introduction-to-subagents">Introduction to subagents (강의)</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/api/docs/guides/agents/orchestration">Orchestration and handoffs</a>, <a href="https://developers.openai.com/api/docs/guides/responses-multi-agent">Multi-agent</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://adk.dev/workflows/collaboration/">ADK collaborative workflows</a>, <a href="https://adk.dev/workflows/patterns/">ADK workflow patterns</a></span></div>
+      </div>
+
+      <h3>스킬</h3>
+      <div class="sources" style="margin-top:0.5rem; padding-top:0; border-top:none;">
+        <div class="src-row"><span class="src-vendor">표준</span><span><a href="https://agentskills.io/specification">Agent Skills 사양</a></span></div>
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/skills">Extend Claude with skills</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Agent Skills overview</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices">Best practices</a>, <a href="https://support.claude.com/en/articles/12512198-how-to-create-custom-skills">claude.ai에서 커스텀 스킬 만들기</a></span></div>
+        <div class="src-row"><span class="src-vendor">OpenAI</span><span><a href="https://developers.openai.com/codex/skills">Codex skills</a>, <a href="https://developers.openai.com/api/docs/guides/tools-skills">Skills (API)</a></span></div>
+        <div class="src-row"><span class="src-vendor">Google</span><span><a href="https://geminicli.com/docs/cli/skills/">Gemini CLI skills</a>, <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/skill-registry">Gemini Enterprise Skill Registry</a></span></div>
+      </div>
+
+      <h3>하니스와 파일 규약</h3>
+      <div class="sources" style="margin-top:0.5rem; padding-top:0; border-top:none;">
+        <div class="src-row"><span class="src-vendor">Anthropic</span><span><a href="https://code.claude.com/docs/en/claude-directory">Explore the .claude directory</a>, <a href="https://code.claude.com/docs/en/memory">Memory (CLAUDE.md)</a>, <a href="https://code.claude.com/docs/en/hooks">Hooks</a>, <a href="https://code.claude.com/docs/en/settings">Settings</a>, <a href="https://code.claude.com/docs/en/commands">Commands reference</a></span></div>
+        <div class="src-row"><span class="src-vendor">Anthropic 블로그</span><span><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Effective context engineering for AI agents</a></span></div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p>이 문서는 Anthropic, OpenAI, Google 공식 문서와 공개 표준(agentskills.io, modelcontextprotocol.io)을 기준으로 정리했습니다. 각 절 하단의 출처 링크에서 원문을 확인할 수 있습니다.</p>
+      <p>개념 정리가 먼저 필요하다면 <a href="https://jsonpassion.github.io/ai-literacy-guide/">기본편</a>부터 읽어 주세요. 오탈자나 고치면 좋을 부분이 보이면 Jason에게 문의해 주세요.</p>
+      <p class="foot-meta">Apple Developer Academy 2026</p>
+    </footer>
+
+  </main>
+</div>
+</div>
+
+<script src="script.js?v=1"></script>
+</body>
+</html>
